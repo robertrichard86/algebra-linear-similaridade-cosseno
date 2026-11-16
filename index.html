@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Trabalho de Algebra Linear: Similaridade do Cosseno aplicada a frases de jogadores de futebol. TF-IDF e Transformer Embeddings.">
+  <meta name="author" content="Robert Richard">
+  <title>Similaridade do Cosseno | Frases de Jogadores de Futebol</title>
+
+  <!-- Favicon (emoji de bola de futebol) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x26BD;</text></svg>">
+
+  <!-- Estilos -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- ========== HERO / HEADER ========== -->
+  <header class="hero" id="top">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span>&#x26BD;</span>
+        <span data-i18n="hero_badge">Algebra Linear</span>
+      </div>
+      <h1>
+        <span data-i18n="hero_title_1">Similaridade do </span>
+        <span class="accent" data-i18n="hero_title_2">Cosseno</span>
+      </h1>
+      <p class="subtitle" data-i18n="hero_subtitle">
+        Comparando declaracoes de jogadores de futebol usando vetorizacao de texto: TF-IDF e Transformer Embeddings
+      </p>
+      <div class="hero-meta">
+        <span>&#x1F393; <span data-i18n="hero_student">Aluno: Robert Richard</span></span>
+        <span>&#x1F4DA; <span data-i18n="hero_professor">Prof. Alexandre Garcia</span></span>
+        <span>&#x1F3EB; <span data-i18n="hero_institution">Fatec Baixada Santista</span></span>
+        <span>&#x1F4CA; <span data-i18n="hero_course">Ciencia de Dados</span></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========== BARRA DE CONTROLES (sticky) ========== -->
+  <nav class="controls-bar">
+    <div class="controls-inner">
+      <!-- Links de navegacao -->
+      <div class="nav-links">
+        <a href="#heatmap-section" data-i18n="nav_heatmap">Heatmap</a>
+        <a href="#comparison-section" data-i18n="nav_comparison">Comparacao</a>
+        <a href="#cosine-calc-section" data-i18n="nav_calculation">Calculo</a>
+        <a href="#sources-section" data-i18n="nav_sources">Fontes</a>
+      </div>
+
+      <div class="controls-right">
+        <!-- Seletor de metodo -->
+        <div class="method-selector" id="method-selector">
+          <button class="method-btn active" data-method="tfidf" id="btn-tfidf">
+            TF-IDF
+          </button>
+          <button class="method-btn transformer-btn" data-method="transformer" id="btn-transformer">
+            Transformer
+            <span class="loading-dot" id="transformer-loading-dot" style="display:none;"></span>
+          </button>
+        </div>
+
+        <!-- Seletor de idioma -->
+        <div class="lang-selector" id="lang-selector">
+          <button class="lang-btn active" data-lang="pt" title="Portugues">PT</button>
+          <button class="lang-btn" data-lang="en" title="English">EN</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ========== CONTEUDO PRINCIPAL ========== -->
+  <main class="main-container">
+
+    <!-- Status do transformer -->
+    <div class="notification info" id="transformer-status-bar" style="display:none;">
+      <span class="status-dot loading"></span>
+      <span id="transformer-status-text" data-i18n="transformer_loading">Carregando modelo transformer no navegador...</span>
+    </div>
+
+    <!-- ===== SECAO 1: HEATMAP DA MATRIZ DE SIMILARIDADE ===== -->
+    <section class="section" id="heatmap-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="icon">&#x1F5FA;&#xFE0F;</span>
+          <span data-i18n="heatmap_title">Matriz de Similaridade</span>
+        </h2>
+        <div class="heatmap-controls">
+          <div class="heatmap-toggle" id="heatmap-granularity-toggle">
+            <button class="heatmap-toggle-btn active" data-granularity="average" data-i18n="heatmap_average">Media por jogador</button>
+            <button class="heatmap-toggle-btn" data-granularity="phrase" data-i18n="heatmap_phrase">Frase a frase</button>
+          </div>
+        </div>
+      </div>
+      <p class="section-description" data-i18n="heatmap_description">
+        Cada celula mostra a similaridade do cosseno (de 0 a 1) entre dois jogadores. Valores mais altos (cores quentes) indicam que os jogadores falam de forma mais parecida. Passe o mouse sobre uma celula para ver detalhes.
+      </p>
+
+      <div class="card">
+        <!-- Heatmap: media por jogador -->
+        <div id="heatmap-average-panel">
+          <div class="heatmap-container" id="heatmap-average-container">
+            <div class="loading-overlay" id="heatmap-loading">
+              <div class="loading-spinner"></div>
+              <span class="loading-text" data-i18n="loading_data">Carregando dados...</span>
+            </div>
+          </div>
+          <div class="heatmap-legend">
+            <span>0.0</span>
+            <div class="heatmap-legend-gradient"></div>
+            <span>1.0</span>
+          </div>
+        </div>
+
+        <!-- Heatmap: frase a frase -->
+        <div id="heatmap-phrase-panel" style="display:none;">
+          <div class="phrase-matrix-container" id="heatmap-phrase-container">
+            <div class="loading-overlay">
+              <div class="loading-spinner"></div>
+              <span class="loading-text" data-i18n="loading_matrix">Gerando matriz frase a frase...</span>
+            </div>
+          </div>
+          <div class="heatmap-legend">
+            <span>0.0</span>
+            <div class="heatmap-legend-gradient"></div>
+            <span>1.0</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== SECAO 2: COMPARACAO COM INPUT DO USUARIO ===== -->
+    <section class="section" id="comparison-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="icon">&#x1F50D;</span>
+          <span data-i18n="comparison_title">Compare sua frase</span>
+        </h2>
+      </div>
+      <p class="section-description" data-i18n="comparison_description">
+        Digite uma frase livre e descubra qual jogador fala de forma mais parecida com voce. O sistema calcula a similaridade do cosseno entre sua frase e todas as frases do dataset.
+      </p>
+
+      <!-- Area de input -->
+      <div class="card input-card">
+        <div class="input-group">
+          <textarea 
+            id="user-input" 
+            data-i18n-placeholder="input_placeholder"
+            placeholder="Digite sua frase aqui... (ex: Quero ganhar a Liga dos Campeoes)"
+            rows="3"
+          ></textarea>
+          <div class="input-actions">
+            <button class="btn btn-primary" id="btn-compare" data-i18n="btn_compare">
+              &#x1F4CA; Comparar
+            </button>
+            <button class="btn btn-secondary" id="btn-clear" data-i18n="btn_clear">
+              &#x1F5D1;&#xFE0F; Limpar
+            </button>
+            <span class="status-badge" id="method-badge">
+              <span class="status-dot ready"></span>
+              TF-IDF
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resultados -->
+      <div class="dual-panel" style="margin-top: 1.5rem;">
+        <!-- Ranking -->
+        <div class="card" id="ranking-card">
+          <div class="card-header">
+            <span class="card-title" data-i18n="ranking_title">&#x1F3C6; Ranking de similaridade</span>
+          </div>
+          <div id="ranking-container">
+            <div class="empty-state">
+              <span class="icon">&#x1F4DD;</span>
+              <span class="message" data-i18n="ranking_empty">Digite uma frase para ver o ranking</span>
+              <span class="hint" data-i18n="ranking_hint">Os 10 jogadores serao ranqueados por similaridade com a sua frase</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Visualizacao do angulo -->
+        <div class="card" id="angle-card">
+          <div class="card-header">
+            <span class="card-title" data-i18n="angle_title">&#x1F4D0; Visualizacao do angulo</span>
+          </div>
+          <div class="angle-visualization" id="angle-container">
+            <canvas id="angle-canvas" class="angle-canvas" width="350" height="300"></canvas>
+          </div>
+          <div style="text-align:center; padding: 0.5rem;">
+            <span class="calc-result-label" data-i18n="angle_explanation">
+              O angulo entre os vetores ilustra a similaridade: quanto menor o angulo, mais similares os textos.
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== SECAO 3: CONTA DO COSSENO (passo a passo) ===== -->
+    <section class="section" id="cosine-calc-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="icon">&#x1F9EE;</span>
+          <span data-i18n="calc_section_title">Calculo do Cosseno: Passo a Passo</span>
+        </h2>
+      </div>
+      <p class="section-description" data-i18n="calc_section_description">
+        Veja como a similaridade do cosseno e calculada. Selecione dois jogadores (ou use sua frase acima) para visualizar cada etapa: os vetores, o produto escalar, as normas e o resultado final.
+      </p>
+
+      <div class="cosine-calc-panel">
+        <div class="calc-header">
+          <span class="calc-title">
+            &#x1F4D0; <span data-i18n="calc_panel_title">Detalhamento do calculo</span>
+          </span>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <!-- Seletores de jogadores para comparacao detalhada -->
+            <select id="calc-player-a" class="btn btn-secondary" style="font-size: 0.8rem;">
+              <option value="" data-i18n="calc_select_a">Jogador A</option>
+            </select>
+            <span style="color: var(--text-muted);">vs</span>
+            <select id="calc-player-b" class="btn btn-secondary" style="font-size: 0.8rem;">
+              <option value="" data-i18n="calc_select_b">Jogador B</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="calc-body" id="calc-body">
+          <!-- Formula principal -->
+          <div class="calc-formula">
+            <div class="formula-main">cos(&#x3B8;) = (A &#xB7; B) / (||A|| &#xD7; ||B||)</div>
+            <div class="formula-desc" data-i18n="calc_formula_desc">
+              Similaridade do cosseno: produto escalar dos vetores dividido pelo produto de suas normas
+            </div>
+          </div>
+
+          <!-- Estado vazio -->
+          <div id="calc-empty-state" class="empty-state">
+            <span class="icon">&#x1F9EE;</span>
+            <span class="message" data-i18n="calc_empty">Selecione dois jogadores acima para visualizar o calculo</span>
+          </div>
+
+          <!-- Steps (preenchidos via JS) -->
+          <div id="calc-steps" style="display:none;">
+            <!-- Step 1: Vetores -->
+            <div class="calc-step" id="calc-step-vectors">
+              <div class="calc-step-title" data-i18n="calc_step1_title">Passo 1: Vetores</div>
+              <div class="calc-step-content" id="calc-vectors-content">
+                <!-- preenchido via JS -->
+              </div>
+            </div>
+
+            <!-- Visualizacao dos vetores como barras -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.75rem;">
+              <div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">
+                  <span data-i18n="calc_vector_a">Vetor A</span>
+                  <span id="calc-vector-a-label"></span>
+                </div>
+                <div class="vector-display" id="calc-vector-a-bars"></div>
+              </div>
+              <div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">
+                  <span data-i18n="calc_vector_b">Vetor B</span>
+                  <span id="calc-vector-b-label"></span>
+                </div>
+                <div class="vector-display" id="calc-vector-b-bars"></div>
+              </div>
+            </div>
+
+            <!-- Step 2: Produto escalar -->
+            <div class="calc-step" id="calc-step-dot">
+              <div class="calc-step-title" data-i18n="calc_step2_title">Passo 2: Produto Escalar (A . B)</div>
+              <div class="calc-step-content" id="calc-dot-content"></div>
+            </div>
+
+            <!-- Step 3: Normas -->
+            <div class="calc-step" id="calc-step-norms">
+              <div class="calc-step-title" data-i18n="calc_step3_title">Passo 3: Normas (||A|| e ||B||)</div>
+              <div class="calc-step-content" id="calc-norms-content"></div>
+            </div>
+
+            <!-- Step 4: Resultado -->
+            <div class="calc-step" id="calc-step-result">
+              <div class="calc-step-title" data-i18n="calc_step4_title">Passo 4: Resultado Final</div>
+              <div class="calc-step-content" id="calc-result-content"></div>
+            </div>
+
+            <!-- Resultado em destaque -->
+            <div class="calc-result" id="calc-result-box">
+              <div class="calc-result-value" id="calc-result-value">-</div>
+              <div class="calc-result-label" id="calc-result-label" data-i18n="calc_result_label">Similaridade do cosseno</div>
+              <div style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-muted);">
+                <span data-i18n="calc_angle_label">Angulo:</span>
+                <span id="calc-angle-value" style="color: var(--gold-400); font-family: var(--font-mono);">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== SECAO 4: SOBRE AS FRASES (fontes) ===== -->
+    <section class="section" id="sources-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="icon">&#x1F4C4;</span>
+          <span data-i18n="sources_title">Sobre as Frases</span>
+        </h2>
+      </div>
+      <p class="section-description" data-i18n="sources_description">
+        Todas as frases usadas neste trabalho sao declaracoes reais de jogadores de futebol, coletadas de fontes jornalisticas. A tabela abaixo mostra a procedencia de cada frase.
+      </p>
+
+      <div class="card">
+        <div class="notification warning">
+          <span>&#x26A0;&#xFE0F;</span>
+          <span data-i18n="sources_note_translations">
+            Nota: a maioria dos jogadores nao fala portugues nativamente. As frases sao traducoes jornalisticas para o portugues brasileiro.
+          </span>
+        </div>
+        <div class="notification info">
+          <span>&#x2139;&#xFE0F;</span>
+          <span data-i18n="sources_note_rodri">
+            Nota sobre Rodri: aparece com clube atual como FC Barcelona (pos-transferencia de agosto/2026), mas todas as suas frases foram ditas quando ainda jogava no Manchester City.
+          </span>
+        </div>
+
+        <!-- Filtro por jogador -->
+        <div style="margin-bottom: 1rem;">
+          <select id="sources-filter" class="btn btn-secondary" style="width: 100%; max-width: 300px; font-size: 0.85rem;">
+            <option value="all" data-i18n="sources_filter_all">Todos os jogadores</option>
+          </select>
+        </div>
+
+        <div class="sources-table-container">
+          <table class="sources-table" id="sources-table">
+            <thead>
+              <tr>
+                <th data-i18n="sources_col_player">Jogador</th>
+                <th data-i18n="sources_col_club">Clube</th>
+                <th data-i18n="sources_col_phrase">Frase</th>
+                <th data-i18n="sources_col_source">Fonte</th>
+                <th data-i18n="sources_col_date">Data</th>
+                <th data-i18n="sources_col_context">Contexto</th>
+              </tr>
+            </thead>
+            <tbody id="sources-table-body">
+              <!-- Preenchido via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== SECAO 5: METODOLOGIA (informativa) ===== -->
+    <section class="section" id="methodology-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="icon">&#x1F4D6;</span>
+          <span data-i18n="methodology_title">Metodologia</span>
+        </h2>
+      </div>
+
+      <div class="dual-panel">
+        <!-- Card TF-IDF -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">&#x1F4CA; TF-IDF</span>
+            <span class="status-badge ready"><span class="status-dot ready"></span> <span data-i18n="status_local">Local</span></span>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.7;" data-i18n="methodology_tfidf_desc">
+            O TF-IDF (Term Frequency, Inverse Document Frequency) e um metodo classico de vetorizacao de texto. Cada frase e transformada em um vetor esparso, onde cada dimensao corresponde a uma palavra do vocabulario. O peso de cada palavra e calculado pela frequencia do termo no documento multiplicada pelo inverso da frequencia do documento no corpus. A implementacao e feita inteiramente em JavaScript, sem dependencias externas.
+          </p>
+        </div>
+
+        <!-- Card Transformer -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">&#x1F916; Transformer Embeddings</span>
+            <span class="status-badge" id="transformer-method-badge">
+              <span class="status-dot loading" id="transformer-method-dot"></span>
+              <span id="transformer-method-label" data-i18n="status_loading">Carregando...</span>
+            </span>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.7;" data-i18n="methodology_transformer_desc">
+            Os embeddings sao gerados pelo modelo paraphrase-multilingual-MiniLM-L12-v2, um transformer multilingual treinado para capturar similaridade semantica. Os embeddings do dataset foram pre-calculados e salvos em JSON. Para frases do usuario, o modelo roda diretamente no navegador via Transformers.js. Cada frase e representada por um vetor denso de 384 dimensoes, que captura o significado semantico do texto.
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========== FOOTER ========== -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-credits">
+        <strong data-i18n="footer_project">Trabalho de Algebra Linear</strong><br>
+        <span data-i18n="footer_student">Aluno: Robert Richard</span> |
+        <span data-i18n="footer_professor">Professor: Alexandre Garcia</span><br>
+        <span data-i18n="footer_course_full">Ciencia de Dados, Fatec Baixada Santista (Rubens Lara)</span><br>
+        <span style="font-size: 0.75rem; color: var(--text-muted);">&copy; 2026 Robert Richard. MIT License.</span>
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/robertrichard86/algebra-linear-similaridade-cosseno" target="_blank" rel="noopener" data-i18n="footer_github">&#x1F4BB; GitHub</a>
+        <a href="#top" data-i18n="footer_top">&#x2B06;&#xFE0F; Voltar ao topo</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Tooltip global -->
+  <div class="tooltip" id="global-tooltip" style="display:none;"></div>
+
+  <!-- ========== SCRIPTS ========== -->
+  <script src="js/i18n.js"></script>
+  <script src="js/cosine.js"></script>
+  <script src="js/tfidf.js"></script>
+  <script src="js/embeddings.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
