@@ -29,7 +29,7 @@
 
 ## 📌 Sobre o Projeto
 
-Este projeto é uma aplicação web acadêmica desenvolvida para a disciplina de **Álgebra Linear** do curso superior de **Ciência de Dados** da **Fatec Baixada Santista (Rubens Lara)**, sob orientação do **Prof. Alexandre Garcia**.
+Este projeto é uma aplicação web acadêmica desenvolvida para a disciplina de **Álgebra Linear** do curso superior de **Ciência de Dados** da **Fatec Baixada Santista (Rubens Lara)**, ministrada pelo **Prof. Alexandre Garcia**.
 
 O objetivo central é demonstrar de forma visual, interativa e rigorosa como conceitos fundamentais de Álgebra Linear (espaços vetoriais, produto escalar, norma euclidiana e ângulo entre vetores) são aplicados no mundo real em Processamento de Linguagem Natural (PLN) e Recuperação de Informação.
 
@@ -281,7 +281,7 @@ URL Oficial de Acesso:
 ## 👥 Créditos Acadêmicos
 
 - **Aluno:** Robert Richard
-- **Professor Orientador:** Alexandre Garcia
+- **Professor:** Alexandre Garcia
 - **Disciplina:** Álgebra Linear
 - **Curso:** Graduação em Ciência de Dados
 - **Instituição:** Faculdade de Tecnologia da Baixada Santista (Fatec Rubens Lara)
