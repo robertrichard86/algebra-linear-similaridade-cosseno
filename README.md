@@ -95,7 +95,9 @@ A similaridade do cosseno mede a **orientação direcional** dos vetores e não 
 | $< 0.00$ | $> 90^\circ$ | Ângulo obtuso | Semântica divergente (possível em embeddings densos) |
 | $-1.00$ | $180^\circ$ | Vetores colineares opostos | Oposição diametral |
 
-Em espaços vetoriais positivos como o TF-IDF (onde todas as frequências são não negativas), os vetores pertencem ao primeiro ortante, fazendo com que o cosseno varie estritamente no intervalo $[0, 1]$.
+> **Nota:** os valores de ângulo na tabela acima são aproximados. Por exemplo, $\cos(45°) \approx 0{,}7071$ e $\cos(72°) \approx 0{,}309$.
+
+Em espaços vetoriais positivos como o TF-IDF (onde todas as frequências são não negativas), os vetores pertencem ao primeiro ortante, fazendo com que o cosseno varie no intervalo $[0, 1]$.
 
 ---
 
